@@ -6,12 +6,9 @@ rootdir=sys.argv[3]
 
 open(fout+'.conf','w').write('''continue
 dir=%s
-file-allocation=none
 input-file=%s
-log-level=warn
-max-connection-per-server=5
-max-concurrent-downloads=3
-min-split-size=5M
+max-connection-per-server=1
+max-concurrent-downloads=1
 on-download-complete=exit''' % (os.path.abspath(rootdir), fout+'.input'))
 
 vlist=open(fin).read().splitlines()
