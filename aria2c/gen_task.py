@@ -8,8 +8,7 @@ open(fout+'.conf','w').write('''continue
 dir=%s
 input-file=%s
 max-connection-per-server=1
-max-concurrent-downloads=1
-on-download-complete=exit''' % (os.path.abspath(rootdir), fout+'.input'))
+max-concurrent-downloads=1''' % (os.path.abspath(rootdir), fout+'.input'))
 
 vlist=open(fin).read().splitlines()
 data=[]
