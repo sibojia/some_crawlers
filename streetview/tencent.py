@@ -45,6 +45,7 @@ while q.count > 0:
 			print "Processed %d. Current: %s" % (count, curid)
 			open('svid_queue.txt','w').write('\n'.join(q))
 		open(os.path.join(OUTDIR, curid+'.xml'), 'w').write(xmlstr)
+		dupset.add(curid)
 		xmldom = parseString(xmlstr).documentElement
 		scenes = xmldom.getElementsByTagName('all_scenes')[0].getElementsByTagName('all_scene')
 		for scene in scenes:
