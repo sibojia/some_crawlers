@@ -31,6 +31,14 @@ if os.path.exists('svid_queue.txt'):
 else:
 	q.append(u'10011021130417114051700')
 	qset.add(u'10011021130417114051700')
+
+# For debug
+#lines = open('error.log').readlines()
+#for l in lines:
+	#q.appendleft(unicode(l.strip()))
+	#qset.add(unicode(l.strip()))
+	#dupset.remove(unicode(l.strip()))
+
 count = 0
 print "Start with %d items in queue" % len(q)
 while q.count > 0:
@@ -39,6 +47,7 @@ while q.count > 0:
 	if curid in dupset:
 		continue
 	xmlstr = urlget(u'http://sv.map.qq.com/sv?pf=web&svid=%s&from=http://map.qq.com/'%curid)
+	xmlstr = xmlstr.replace("&", "and")
 	if len(xmlstr) > 0:
 		count += 1
 		if count % 100 == 0:
@@ -46,10 +55,17 @@ while q.count > 0:
 			open('svid_queue.txt','w').write('\n'.join(q))
 		open(os.path.join(OUTDIR, curid+'.xml'), 'w').write(xmlstr)
 		dupset.add(curid)
-		xmldom = parseString(xmlstr).documentElement
-		scenes = xmldom.getElementsByTagName('all_scenes')[0].getElementsByTagName('all_scene')
-		for scene in scenes:
-			svid = scene.getAttribute('svid')
-			if svid not in qset:
-				qset.add(svid)
-				q.append(svid)
+		try:
+			xmldom = parseString(xmlstr).documentElement
+			scenes = xmldom.getElementsByTagName('all_scenes')[0].getElementsByTagName('all_scene')
+			for scene in scenes:
+				svid = scene.getAttribute('svid')
+				if svid not in qset:
+					qset.add(svid)
+					q.append(svid)
+		except:
+			print "Error parsing %s" % curid
+			open("error.log","a").write(curid+'\n')
+	else:
+		print "Error fetching %s" % curid
+		open("error.log","a").write(curid+'\n')
