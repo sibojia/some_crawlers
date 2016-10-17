@@ -18,7 +18,7 @@ def read_all_files(root):
     SKIP=20
     l=os.listdir(root)
     data=[]
-    counter = ProgressPrinter(target=len(root)/SKIP)
+    counter = ProgressPrinter(target=len(l)/SKIP)
     counter.start()
     skip=0
     for fname in l:
@@ -66,9 +66,9 @@ def main():
     else:
         points=cPickle.load(open('pdata-25w.pkl'))
     img=get_point_image(points)
-    cv2.imshow("map",img)
-    cv2.imwrite("pmap.jpng", img)
-    cv2.waitKey(0)
+    # cv2.imshow("map",img)
+    cv2.imwrite("pmap.jpg", img)
+    # cv2.waitKey(0)
 
 if __name__ == "__main__":
     main()

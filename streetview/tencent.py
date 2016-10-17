@@ -3,6 +3,9 @@ import urllib2, os, sys
 import json, time, Queue
 from xml.dom.minidom import parse, parseString
 
+OUTDIR = 'tencent_xml'
+os.system('mkdir -p %s'%OUTDIR)
+
 def urlget(url):
 	try:
 		return urllib2.urlopen(url, timeout=5).read()
@@ -14,8 +17,18 @@ def urlget(url):
 		except:
 			return ''
 
-OUTDIR = 'tencent_xml'
-os.system('mkdir -p %s'%OUTDIR)
+def get_xml(svid):
+	xmlstr = urlget(u'http://sv.map.qq.com/sv?pf=web&svid=%s&from=http://map.qq.com/'%svid)
+	xmlstr = xmlstr.replace("&", "and")
+	return xmlstr
+
+# For trying ids in error.log
+#for line in open('error.log').readlines():
+	#xmlstr = get_xml(line.strip())
+	#if xmlstr:
+		#open(os.path.join(OUTDIR, line.strip()+'.xml'), 'w').write(xmlstr)
+		#print line,
+#sys.exit()
 
 dupset = set()
 for i in os.listdir(OUTDIR):
@@ -46,8 +59,7 @@ while q.count > 0:
 	qset.remove(curid)
 	if curid in dupset:
 		continue
-	xmlstr = urlget(u'http://sv.map.qq.com/sv?pf=web&svid=%s&from=http://map.qq.com/'%curid)
-	xmlstr = xmlstr.replace("&", "and")
+	xmlstr = get_xml(curid)
 	if len(xmlstr) > 0:
 		count += 1
 		if count % 100 == 0:
