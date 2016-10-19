@@ -14,16 +14,15 @@ def read_pos(xmlstr):
     lat=xmldom.getElementsByTagName('addr')[0].getAttribute('y_lat')
     return (float(lng), float(lat))
 
-def read_all_files(root):
-    SKIP=20
+def read_all_files(root, interval=20):
     l=os.listdir(root)
     data=[]
-    counter = ProgressPrinter(target=len(l)/SKIP)
+    counter = ProgressPrinter(target=len(l)/interval)
     counter.start()
     skip=0
     for fname in l:
         skip+=1
-        if skip==SKIP:
+        if skip==interval:
             skip=0
         else:
             continue
@@ -31,7 +30,7 @@ def read_all_files(root):
         try:
             pos=read_pos(xmlstr)
             data.append((pos, fname.split('.')[0]))
-        except:
+        except Exception as e:
             print "error", fname
             pass
         counter.tick()
@@ -52,22 +51,22 @@ def get_point_image(points, width=800, height=600):
     maxbound[1]+=0.1*(maxbound[1]-minbound[1])
     x_delta=maxbound[0]-minbound[0]
     y_delta=maxbound[1]-minbound[1]
-    img=np.ones((height, width,3), dtype=np.ubyte)*50
+    img=np.ones((height, width,3), dtype=np.ubyte)*80
     for p in points:
         x=(p[0][0]-minbound[0])*width/x_delta
         y=height-(p[0][1]-minbound[1])*height/y_delta
-        img[y,x]=(255,100,100)
+        img[y,x]=(255,150,150)
     return img
 
 def main():
-    if True:
-        points=read_all_files('./tencent_xml')
-        cPickle.dump(points, open('pdata-tmp.pkl','wb'))
+    if False:
+        points=read_all_files('./tencent_xml', interval=1)
+        cPickle.dump(points, open('pdata-tmp.pkl','wb'), cPickle.HIGHEST_PROTOCOL)
     else:
-        points=cPickle.load(open('pdata-25w.pkl'))
-    img=get_point_image(points)
+        points=cPickle.load(open(sys.argv[1]))
+    img=get_point_image(points, width=8192, height=8192)
     # cv2.imshow("map",img)
-    cv2.imwrite("pmap.jpg", img)
+    cv2.imwrite("pmap.png", img)
     # cv2.waitKey(0)
 
 if __name__ == "__main__":
