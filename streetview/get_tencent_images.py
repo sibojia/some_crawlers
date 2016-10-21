@@ -26,6 +26,7 @@ class DownQueue(threading.Thread):
 			svid=self.queue.get()
 			fname='tencent_images/%s.jpg'%svid
 			if os.path.exists(fname):
+				counter.tick()
 				continue
 			img=get_surround_image(svid, 1)
 			if img is not None:
@@ -120,9 +121,18 @@ def add_task_by_gps_range(data, xr, yr):
 	return queue,length
 
 if __name__ == "__main__":
-	data=cPickle.load(open('pdata-1017.pkl'))
-	queue,length=add_task_by_gps_range(data, [116.314146, 116.338340], [39.987957, 40.000994])
-	print "Start task with %d ids..."%length
+	if os.path.exists('error_img.log'):
+		ids=open('error_img.log').read().splitlines()
+		queue=Queue.Queue()
+		length=len(ids)
+		for i in ids:
+			queue.put(i)
+		os.remove('error_img.log')
+	else:
+		data=cPickle.load(open('pdata-1017.pkl'))
+		queue,length=add_task_by_gps_range(data, [116.314146, 116.338340], [39.987957, 40.000994])
+	print "Start task with %d ids, press enter to proceed.."%length
+	raw_input()
 	threads=[]
 	for i in range(4):
 		t=DownQueue(queue)
