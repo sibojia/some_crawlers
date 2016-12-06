@@ -5,7 +5,7 @@ import os
 import re
 import cPickle
 import time
-import queue
+import Queue
 
 class ProgressPrinter(object):
     """simple logger"""

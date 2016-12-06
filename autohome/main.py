@@ -161,7 +161,7 @@ class DownQueue(threading.Thread):
 
 def download_imgs():
     sdata = cm.get(PURL_NAME)
-    pdata = queue.Queue()
+    pdata = Queue.Queue()
     length = 0
     bid = 0
     for brand in sdata:
