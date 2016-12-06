@@ -8,6 +8,8 @@ import copy
 cm = CacheManager()
 SERIE_NAME = 'autohome_series'
 SURL_NAME = 'autohome_serie_urls'
+PURL_NAME = 'autohome_pic_urls'
+host = 'http://car.autohome.com.cn'
 
 def get_series():
     # cm.purge(SERIE_NAME)
@@ -64,7 +66,6 @@ def get_series():
     return jdata
 
 def get_pic_url(sdata):
-    host = 'http://car.autohome.com.cn'
     urldata = cm.get(SURL_NAME)
     if urldata is None:
         urldata = copy.deepcopy(sdata)
@@ -102,21 +103,98 @@ def get_pic_url(sdata):
     print 'Done.'
 
 def get_dl_url():
-    sdata = cm.get(SURL_NAME)
+    pp = ProgressPrinter(interval=10)
+    sdata = cm.get(PURL_NAME)
+    if sdata is None:
+        sdata = cm.get(SURL_NAME)
     num = 0
     for brand in sdata:
-        # print '', brand['name'].decode('gbk')
+        print '', brand['name'].decode('gbk')
         for fct in brand['factories']:
             # print ' ', fct['name'].decode('gbk')
             for serie in fct['series']:
-                pass
+                if serie.has_key('pic_url') and len(serie['pic_url']) == len(serie['pics']):
+                    continue
+                serie['pic_url'] = []
+                for url, mname in serie['pics']:
+                    pp.tick()
+                    pstr = urlget_h(host + url.replace('photo', 'bigphoto'))
+                    match_p = re.findall('id="img" src="(.*?)"', pstr)
+                    if len(match_p) != 1:
+                        print "Error!", url, mname
+                        continue
+                    else:
+                        purl = match_p[0]
+                    match_c = re.findall(u'外观颜色.*?class="red".*?>(.*?)<span>', pstr.decode('gbk'))
+                    if len(match_c) == 1:
+                        color = match_c[0]
+                    else:
+                        color = ''
+                    serie['pic_url'].append({'name': mname, 'url': purl, 'color': color})
+                    num += 1
+        cm.save(PURL_NAME, sdata)
+        time.sleep(1)
     print num
+
+dpp = ProgressPrinter(interval=1)
+class DownQueue(threading.Thread):
+    def __init__(self,queue):
+        threading.Thread.__init__(self)
+        self.queue=queue
+    def run(self):
+        while not self.queue.empty():
+            item = self.queue.get()
+            dpath = os.path.split(item[0])[0]
+            if os.path.exists(item[0]):
+                dpp.tick()
+                continue
+            if not os.path.exists(dpath):
+                os.makedirs(dpath)
+            img = urlget_h(item[1])
+            if img is not None:
+                open(item[0], 'wb').write(img)
+                dpp.tick()
+            else:
+                writeLock.acquire()
+                open('error_img.log', 'a').write(item[0]+' '+item[1]+'\n')
+                writeLock.release()
+
+def download_imgs():
+    sdata = cm.get(PURL_NAME)
+    pdata = queue.Queue()
+    length = 0
+    bid = 0
+    for brand in sdata:
+        fid = 0
+        for fct in brand['factories']:
+            sid = 0
+            for serie in fct['series']:
+                pid = 0
+                for purl in serie['pic_url']:
+                    path = 'images/%03d/%02d/%02d/%04d.jpg' % (bid, fid, sid, pid)
+                    purl['file_path'] = path
+                    pdata.put((path, host + purl['url']))
+                    length += 1
+                    pid += 1
+                sid += 1
+            fid += 1
+        bid += 1
+    cm.save(PURL_NAME, sdata)
+    print "Start task with %d ids"%length
+    threads = []
+    for i in range(8):
+        t = DownQueue(queue)
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
 
 
 def main():
     # sdata = get_series()
     # urls = get_pic_url(sdata)
     get_dl_url()
+    download_imgs()
 
 if __name__ == '__main__':
     main()
