@@ -109,7 +109,7 @@ def get_dl_url():
         sdata = cm.get(SURL_NAME)
     num = 0
     for brand in sdata:
-        print '', brand['name'].decode('gbk')
+        print '', brand['name'].decode('gbk').encode('utf8')
         for fct in brand['factories']:
             # print ' ', fct['name'].decode('gbk')
             for serie in fct['series']:
@@ -133,7 +133,7 @@ def get_dl_url():
                     serie['pic_url'].append({'name': mname, 'url': purl, 'color': color})
                     num += 1
         cm.save(PURL_NAME, sdata)
-        time.sleep(1)
+        time.sleep(0.1)
     print num
 
 dpp = ProgressPrinter(interval=1)
@@ -149,15 +149,17 @@ class DownQueue(threading.Thread):
                 dpp.tick()
                 continue
             if not os.path.exists(dpath):
-                os.makedirs(dpath)
+                try:
+                    os.makedirs(dpath)
+                except:
+                    pass
             img = urlget_h(item[1])
             if img is not None:
                 open(item[0], 'wb').write(img)
                 dpp.tick()
             else:
-                writeLock.acquire()
                 open('error_img.log', 'a').write(item[0]+' '+item[1]+'\n')
-                writeLock.release()
+            self.queue.task_done()
 
 def download_imgs():
     sdata = cm.get(PURL_NAME)
@@ -173,7 +175,7 @@ def download_imgs():
                 for purl in serie['pic_url']:
                     path = 'images/%03d/%02d/%02d/%04d.jpg' % (bid, fid, sid, pid)
                     purl['file_path'] = path
-                    pdata.put((path, host + purl['url']))
+                    pdata.put((path, purl['url']))
                     length += 1
                     pid += 1
                 sid += 1
@@ -183,7 +185,7 @@ def download_imgs():
     print "Start task with %d ids"%length
     threads = []
     for i in range(8):
-        t = DownQueue(queue)
+        t = DownQueue(pdata)
         t.start()
         threads.append(t)
     for t in threads:
@@ -191,8 +193,8 @@ def download_imgs():
 
 
 def main():
-    # sdata = get_series()
-    # urls = get_pic_url(sdata)
+    sdata = get_series()
+    urls = get_pic_url(sdata)
     get_dl_url()
     download_imgs()
 

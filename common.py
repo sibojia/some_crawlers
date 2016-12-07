@@ -5,7 +5,7 @@ import os
 import re
 import cPickle
 import time
-import Queue
+import Queue, threading
 
 class ProgressPrinter(object):
     """simple logger"""
@@ -15,6 +15,7 @@ class ProgressPrinter(object):
         self.interval = interval
         self.counter = 0
         self.target = target
+        self.lock = threading.Lock()
 
     def start(self, target = 0, interval = 0):
         self.counter = 0
@@ -24,12 +25,14 @@ class ProgressPrinter(object):
         sys.stderr.write(' done.\n')
         self.counter = 0
     def tick(self):
+        self.lock.acquire()
         self.counter += 1
         if self.counter % self.interval == 0:
             if self.target != 0:
                 sys.stderr.write('\r' + str(self.prefix) + ' %d/%d ...'%(self.counter, self.target))
             else:
                 sys.stderr.write('\r' + str(self.prefix) + ' %d ...'%self.counter)
+        self.lock.release()
     def set_interval(self, interval):
         self.interval = int(interval)
 
